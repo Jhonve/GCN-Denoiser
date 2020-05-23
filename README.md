@@ -3,11 +3,11 @@ Qt and Pytorch implementation for GCN-Denoiser
 
 ### Denoised Results:
 
-![result](imgs\result.png)
+![](/imgs/result.png)
 
 ### Interface:
 
-![interface](imgs\interface.png)
+![](/imgs/interface.png)
 
 ## Code:
 
