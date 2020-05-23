@@ -10,9 +10,29 @@ Qt and Pytorch implementation for GCN-Denoiser
 ### Prerequisites:
 
 - Hardware: Personal computer with NVIDIA GPU.
-- Environments: CUDA10.0, Windows system (network training part can also be implemented on Linux).
+- Environments: CUDA10.0, Windows system (network training part can also be uesd on Linux).
 
 ### Third Party Library:
 
 - [Pytroch C++ 1.2.0](https://pytorch.org/) , [Eigen](http://eigen.tuxfamily.org/index.php?title=Main_Page) and [OpenMesh](https://www.graphics.rwth-aachen.de/software/openmesh/) at runtime.
-- Pytorch1.2.0, numpy, tensorbordx (\>python3.5) in training stage.
+- Pytorch 1.2.0, numpy, Scipy 1,4.1 and tensorbordx 1.13 (\>python3.5) in training stage.
+
+### Network part:
+
+The training code and part of validation data are supplied.
+
+```
+python test.py
+```
+
+### Denoising Interface:
+
+An execution, corresponding code and some sampled mesh models are supplied.
+
+- For code, Visual Studio 2017 are Qt 5.12 required.
+
+### Pre-trained models:
+
+One version of GCN pre-trained models for synthetic models are supplied.
+
+### Keep Updating...
