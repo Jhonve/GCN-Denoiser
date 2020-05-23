@@ -1,9 +1,13 @@
 # GCN-Denoiser: Mesh Denoising with Graph Convolutional Networks
 Qt and Pytorch implementation for GCN-Denoiser
 
-### Denoising Results:
+### Denoised Results:
+
+![result](imgs\result.png)
 
 ### Interface:
+
+![interface](imgs\interface.png)
 
 ## Code:
 
