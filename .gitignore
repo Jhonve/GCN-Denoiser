@@ -37,6 +37,11 @@ DataSet/
 DataGen/
 NetworkModel/
 Results/
+runs/
+.vscode/
+__pycache__
+validationRes/
+Results
 
 # Configure files
 *.vcxproj
