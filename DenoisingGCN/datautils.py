@@ -10,8 +10,8 @@ import torch.utils.data as Tdata
 
 from parsers import getParser
 
-k_data_path = "../../Dataset/Models/"
-k_h5_path = "../../Dataset/DataPath/"
+k_data_path = "./testsamples/"
+k_h5_path = "./testsamples/"
 
 class MatrixDataset(Tdata.Dataset):
     def __init__(self, parser, data_path, num_neighbors, is_train):
@@ -124,16 +124,15 @@ def saveH5(files_path, target_name="dataPath.h5"):
     print("Save path done!")
 
 def selfTest():
-    '''
     # initialize data path to dataPath.h5
     folder_list = os.listdir(k_data_path)
     print("Number of models: ", len(folder_list))
 
     files_path = preDataPath(folder_list)
     print("Number of data: ", len(files_path))
-    saveH5(files_path, "AllDataPath.h5")
-    '''
+    saveH5(files_path, "TestDataPath.h5")
     
+    '''
     # test dataset loader
     opt = getParser()
 
@@ -148,5 +147,7 @@ def selfTest():
     for i, data in enumerate(data_loader, 0):
         inputs, gt, gt_norm, center_norm = data
         print(inputs.shape, i)
+    '''
 
-# selfTest()
+if __name__ == '__main__':
+    selfTest()

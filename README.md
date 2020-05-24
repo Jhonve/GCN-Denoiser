@@ -26,12 +26,18 @@ Qt and Pytorch implementation for GCN-Denoiser
 The training code and part of validation data are supplied. Network test can be run by:
 
 ```
+cd DenoisingGCN/testSamples
+unzip bunny_0_2.zip
+cd ../
+python datautils.py
 python test.py
 ```
 
+bunny_0_2/*.mat are sampled patches from the noisy *bunny* model with 0.2 level of Gaussion noise.
+
 ### Denoising Interface:
 
-An execution, corresponding code and some sampled mesh models are supplied.
+Executable demo, the corresponding code, and some sampled mesh are supplied.
 
 - For code, Visual Studio 2017 and Qt 5.12 are required.
 

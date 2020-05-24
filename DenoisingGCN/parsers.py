@@ -7,7 +7,7 @@ def getParser():
     parser.add_argument("--batch_size", type=int, default=256, help="Size of one batch.")
     parser.add_argument("--learning_rate", type=float, default=0.0001, help="Learning rate.")
     parser.add_argument("--num_workers", type=int, default=8, help="Number of processes when load data.")
-    parser.add_argument("--data_path_file", type=str, default="./AllDataPath.h5", help="Path to data_path H5 file.")
+    parser.add_argument("--data_path_file", type=str, default="./testsamples/TestDataPath.h5", help="Path to data_path H5 file.")
 
     parser.add_argument("--num_epoch", type=int, default=24, help="Number of train epoch.")
     parser.add_argument("--num_val_batch", type=int, default=128, help="Number of selected batch for validation.")
