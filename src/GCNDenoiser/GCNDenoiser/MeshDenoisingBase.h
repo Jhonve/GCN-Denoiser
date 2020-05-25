@@ -32,11 +32,10 @@ public:
 	double updategetError(std::vector<TriMesh::Normal> &filtered_normals);
 	double getError();
 
-	// shen
-	double getMeanSquareAngleError_ea(TriMesh &DenoisedMesh, TriMesh &OriginalMesh);
+	double getMeanSquareAngleErrorMSEA(TriMesh &DenoisedMesh, TriMesh &OriginalMesh);
 	double getVerticesDistance(TriMesh &DenoisedMesh, TriMesh &OriginalMesh);
-	double getErrorA();
-	double getErrorV();
+	double getErrorMSAE();
+	double getErrorDv();
 
 public:
 	DataManager *data_manager_;

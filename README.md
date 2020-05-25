@@ -7,7 +7,7 @@ Qt and Pytorch implementation for GCN-Denoiser
 
 ### Interface:
 
-![](/imgs/interface.png)
+![](/imgs/new_interface.png)
 
 ## Code:
 
@@ -18,7 +18,7 @@ Qt and Pytorch implementation for GCN-Denoiser
 
 ### Third Party Library:
 
-- [Pytroch C++ 1.2.0](https://pytorch.org/) , [Eigen](http://eigen.tuxfamily.org/index.php?title=Main_Page) and [OpenMesh](https://www.graphics.rwth-aachen.de/software/openmesh/) at runtime.
+- [Pytroch C++ 1.2.0](https://pytorch.org/) , [Eigen](http://eigen.tuxfamily.org/index.php?title=Main_Page), [Flann](https://github.com/mariusmuja/flann) and [OpenMesh](https://www.graphics.rwth-aachen.de/software/openmesh/) at runtime.
 - Pytorch 1.2.0, numpy, Scipy 1.4.1 and tensorbordx 1.13 (\>python3.5) in training stage.
 
 ### Network part:
@@ -37,7 +37,7 @@ bunny_0_2/*.mat are sampled patches from the noisy *bunny* model with 0.2 level 
 
 ### Denoising Interface:
 
-Executable demo, the corresponding code, and some sampled mesh are supplied.
+Executable demo, the corresponding code, and some sampled mesh are supplied. *New simplified version has been updated*
 
 - For code, Visual Studio 2017 and Qt 5.12 are required.
 

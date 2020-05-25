@@ -188,7 +188,7 @@ double MeshDenoisingBase::getError()
 	return getMeanSquareAngleError(mesh, originalmesh);
 }
 
-double MeshDenoisingBase::getMeanSquareAngleError_ea(TriMesh &DenoisedMesh, TriMesh &OriginalMesh)
+double MeshDenoisingBase::getMeanSquareAngleErrorMSEA(TriMesh &DenoisedMesh, TriMesh &OriginalMesh)
 {
 	DenoisedMesh.request_face_normals();
 	DenoisedMesh.update_face_normals();
@@ -284,16 +284,16 @@ double MeshDenoisingBase::getVerticesDistance(TriMesh &DenoisedMesh, TriMesh &Or
 	return mean_ev;
 }
 
-double MeshDenoisingBase::getErrorA()
+double MeshDenoisingBase::getErrorMSAE()
 {
 	// get data
 	TriMesh mesh = data_manager_->getDenoisedMesh();
 	TriMesh originalmesh = data_manager_->getOriginalMesh();
 
-	return getMeanSquareAngleError_ea(mesh, originalmesh);
+	return getMeanSquareAngleErrorMSEA(mesh, originalmesh);
 }
 
-double MeshDenoisingBase::getErrorV()
+double MeshDenoisingBase::getErrorDv()
 {
 	// get data
 	TriMesh mesh = data_manager_->getDenoisedMesh();

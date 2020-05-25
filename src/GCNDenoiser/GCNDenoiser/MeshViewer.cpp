@@ -1022,10 +1022,11 @@ void MeshViewer::slotDenoise(int gcns, int normal_iterations)
 
 	std::cout << "\tDenoising Finished! Start calculate Error..." << std::endl;
 	double error = mesh_denoising->getError();
-	double ea = mesh_denoising->getErrorA();
-	std::cout << "Finish! MSE: " << error << " EA: " << ea << std::endl;
-	// double ev = mesh_denoising->getErrorV();
-	// std::cout << "Coarse Denoising Finish! MSE: " << error << " EA: " << ea << " EV: " << ev << std::endl;
+	std::cout << "Finish! Ea: " << error << std::endl;
+	// double ea = mesh_denoising->getErrorMSAE();
+	// std::cout << "Finish! MSE: " << error << " MSAE: " << ea << std::endl;
+	// double dv = mesh_denoising->getErrorDv();
+	// std::cout << "Coarse Denoising Finish! MSE: " << error << " MSAE: " << ea << " Dv: " << dv << std::endl;
 
 	std::string res_name = "./Results/Denoised_";
 	std::string tail = ".obj";
