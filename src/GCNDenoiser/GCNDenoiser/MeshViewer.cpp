@@ -38,13 +38,15 @@ MeshViewer::MeshViewer(QWidget* parent)
 
 	setFocusPolicy(Qt::StrongFocus);
 
-	m_current_file_name = "../../../models/trim-star.obj";
-	meshInitializedGet(m_current_file_name.c_str(), true, 0.1, 0);
+	m_data_manager = new DataManager();
+	m_current_file_name = "../../../models/trim-star_gaus_n3.obj";
+	meshInitializedGet(m_current_file_name.c_str(), false);
+	meshInitializedGet("../../../models/trim-star.obj", true);
 	int start = m_current_file_name.find_last_of('/');
 	int end = m_current_file_name.find_last_of('.');
 	m_model_name = m_current_file_name.substr(start + 1, end - start - 1);
-	m_current_noise_level = 0.1;
-	m_current_noise_type = 0;
+	m_current_noise_level = -1.0;
+	m_current_noise_type = -1;
 }
 
 MeshViewer::~MeshViewer()
@@ -57,137 +59,182 @@ MeshViewer::~MeshViewer()
 	cleanup();
 }
 
-void MeshViewer::meshInitializedGet(const char* file_name, bool is_original, double noise_level, int noise_type)
+void MeshViewer::meshInitializedGet(const char* file_name, bool is_original)
 {
-	std::cout << "Mesh dir: " << file_name << " Generating noised mesh (level: " << noise_level << " type: " << noise_type << " )..." << std::endl;
+	std::cout << "Loading... mesh dir: " << file_name << std::endl;
 
-	m_data_manager = new DataManager();
-	m_data_manager->ImportMeshFromFile(file_name, true);
-
-	Noise* noise = new Noise(m_data_manager, noise_level, noise_type);
-	noise->addNoise();
-
-	m_noised_tri_mesh = m_data_manager->getNoisyMesh();
-
-	m_noised_tri_mesh.request_face_normals();
-	m_noised_tri_mesh.request_vertex_normals();
-	m_noised_tri_mesh.update_normals();
-
-	m_gt_tri_mesh = m_data_manager->getOriginalMesh();
-
-	m_gt_tri_mesh.request_face_normals();
-	m_gt_tri_mesh.request_vertex_normals();
-	m_gt_tri_mesh.update_normals();
-
-	m_num_faces = m_noised_tri_mesh.n_faces();
-
-	m_center = OpenMesh::Vec3d(0., 0., 0.);
-	for (TriMesh::VertexIter v_it = m_noised_tri_mesh.vertices_begin(); v_it != m_noised_tri_mesh.vertices_end(); v_it++)
+	if (!is_original)
 	{
-		OpenMesh::Vec3d center_position_temp = m_noised_tri_mesh.point(*v_it);
-		m_center += center_position_temp;
-	}
-	m_center /= int(m_noised_tri_mesh.n_vertices());
-
-	m_max = 0;
-	for (TriMesh::VertexIter v_it = m_noised_tri_mesh.vertices_begin(); v_it != m_noised_tri_mesh.vertices_end(); v_it++)
-	{
-		OpenMesh::Vec3d position_temp = m_noised_tri_mesh.point(*v_it) - m_center;
-		for (int i = 0; i < 3; i++)
+		OpenMesh::IO::read_mesh(m_noised_tri_mesh, file_name);
+		
+		int new_num_faces = m_noised_tri_mesh.n_faces();
+		if (m_num_faces == 0)
 		{
-			double temp_max = abs(position_temp[i]);
-			if (temp_max > m_max)
+			m_num_faces = new_num_faces;
+		}
+		else
+		{
+			if (new_num_faces != m_num_faces)
 			{
-				m_max = temp_max;
+				std::cout << "Not Match!" << std::endl;
+				return;
 			}
 		}
-	}
 
-	for (TriMesh::VertexIter v_it = m_noised_tri_mesh.vertices_begin(); v_it != m_noised_tri_mesh.vertices_end(); v_it++)
+		m_is_have_noise = true;
+
+		m_is_noise = true;
+		m_is_gt = false;
+		m_is_denoised = false;
+
+		m_data_manager->setNoisyMesh(m_noised_tri_mesh);
+
+		m_noised_tri_mesh.request_face_normals();
+		m_noised_tri_mesh.request_vertex_normals();
+		m_noised_tri_mesh.update_normals();
+
+		m_center = OpenMesh::Vec3d(0., 0., 0.);
+		for (TriMesh::VertexIter v_it = m_noised_tri_mesh.vertices_begin(); v_it != m_noised_tri_mesh.vertices_end(); v_it++)
+		{
+			OpenMesh::Vec3d center_position_temp = m_noised_tri_mesh.point(*v_it);
+			m_center += center_position_temp;
+		}
+		m_center /= int(m_noised_tri_mesh.n_vertices());
+
+		m_max = 0;
+		for (TriMesh::VertexIter v_it = m_noised_tri_mesh.vertices_begin(); v_it != m_noised_tri_mesh.vertices_end(); v_it++)
+		{
+			OpenMesh::Vec3d position_temp = m_noised_tri_mesh.point(*v_it) - m_center;
+			for (int i = 0; i < 3; i++)
+			{
+				double temp_max = abs(position_temp[i]);
+				if (temp_max > m_max)
+				{
+					m_max = temp_max;
+				}
+			}
+		}
+
+		m_noised_mesh_visual_data = new GLfloat[3 * 9 * m_num_faces];
+		m_denoised_mesh_visual_data = new GLfloat[3 * 9 * m_num_faces];
+
+		for (TriMesh::VertexIter v_it = m_noised_tri_mesh.vertices_begin(); v_it != m_noised_tri_mesh.vertices_end(); v_it++)
+		{
+			m_noised_tri_mesh.point(*v_it) -= m_center;
+			m_noised_tri_mesh.point(*v_it) /= m_max / 1.0;
+			OpenMesh::Vec3d center_position_temp = m_noised_tri_mesh.point(*v_it);
+			m_vertices_kd_tree.push_back(glm::vec3(center_position_temp[0], center_position_temp[1], center_position_temp[2]));
+		}
+
+		m_flann_kd_tree = shen::Geometry::EasyFlann(m_vertices_kd_tree);
+
+		FaceNeighborType face_neighbor_type = kVertexBased;
+
+		getAllFaceNeighbor(m_noised_tri_mesh, m_all_face_neighbor, face_neighbor_type, false);
+		getFaceArea(m_noised_tri_mesh, m_face_area);
+		getFaceCentroid(m_noised_tri_mesh, m_face_centroid);
+
+		meshVisualization(m_noised_mesh_visual_data, m_noised_tri_mesh);
+		meshVisualization(m_denoised_mesh_visual_data, m_noised_tri_mesh);
+	}
+	else
 	{
-		m_noised_tri_mesh.point(*v_it) -= m_center;
-		m_noised_tri_mesh.point(*v_it) /= m_max / 1.0;
-		OpenMesh::Vec3d center_position_temp = m_noised_tri_mesh.point(*v_it);
-		m_vertices_kd_tree.push_back(glm::vec3(center_position_temp[0], center_position_temp[1], center_position_temp[2]));
+		OpenMesh::IO::read_mesh(m_gt_tri_mesh, file_name);
+
+		int new_num_faces = m_gt_tri_mesh.n_faces();
+		if (m_num_faces == 0)
+		{
+			m_num_faces = new_num_faces;
+		}
+		else
+		{
+			if (new_num_faces != m_num_faces)
+			{
+				std::cout << "Not Match!" << std::endl;
+				return;
+			}
+		}
+
+		m_is_have_gt = true;
+
+		m_is_gt = true;
+		m_is_noise = false;
+		m_is_denoised = false;
+
+		m_data_manager->setOriginalMesh(m_gt_tri_mesh);
+
+		m_gt_tri_mesh.request_face_normals();
+		m_gt_tri_mesh.request_vertex_normals();
+		m_gt_tri_mesh.update_normals();
+
+		m_center = OpenMesh::Vec3d(0., 0., 0.);
+		for (TriMesh::VertexIter v_it = m_gt_tri_mesh.vertices_begin(); v_it != m_gt_tri_mesh.vertices_end(); v_it++)
+		{
+			OpenMesh::Vec3d center_position_temp = m_gt_tri_mesh.point(*v_it);
+			m_center += center_position_temp;
+		}
+		m_center /= int(m_gt_tri_mesh.n_vertices());
+
+		m_max = 0;
+		for (TriMesh::VertexIter v_it = m_gt_tri_mesh.vertices_begin(); v_it != m_gt_tri_mesh.vertices_end(); v_it++)
+		{
+			OpenMesh::Vec3d position_temp = m_gt_tri_mesh.point(*v_it) - m_center;
+			for (int i = 0; i < 3; i++)
+			{
+				double temp_max = abs(position_temp[i]);
+				if (temp_max > m_max)
+				{
+					m_max = temp_max;
+				}
+			}
+		}
+
+		m_gt_mesh_visual_data = new GLfloat[3 * 9 * m_num_faces];
+
+		
+
+		for (TriMesh::VertexIter v_it = m_gt_tri_mesh.vertices_begin(); v_it != m_gt_tri_mesh.vertices_end(); v_it++)
+		{
+			m_gt_tri_mesh.point(*v_it) -= m_center;
+			m_gt_tri_mesh.point(*v_it) /= m_max / 1.0;
+		}
+
+		m_is_have_gt = true;
+
+		meshVisualization(m_gt_mesh_visual_data, m_gt_tri_mesh);
 	}
+}
 
-	for (TriMesh::VertexIter v_it = m_gt_tri_mesh.vertices_begin(); v_it != m_gt_tri_mesh.vertices_end(); v_it++)
-	{
-		m_gt_tri_mesh.point(*v_it) -= m_center;
-		m_gt_tri_mesh.point(*v_it) /= m_max / 1.0;
-	}
-
-	m_flann_kd_tree = shen::Geometry::EasyFlann(m_vertices_kd_tree);
-
-	FaceNeighborType face_neighbor_type = kVertexBased;
-
-	getAllFaceNeighbor(m_noised_tri_mesh, m_all_face_neighbor, face_neighbor_type, false);
-	getFaceArea(m_noised_tri_mesh, m_face_area);
-	getFaceArea(m_gt_tri_mesh, m_gt_face_area);
-	getFaceCentroid(m_noised_tri_mesh, m_face_centroid);
-	getFaceCentroid(m_gt_tri_mesh, m_gt_face_centroid);
-
-	m_noised_mesh_visual_data = new GLfloat[3 * 9 * m_num_faces];
-	m_gt_mesh_visual_data = new GLfloat[3 * 9 * m_num_faces];
-	m_denoised_mesh_visual_data = new GLfloat[3 * 9 * m_num_faces];
-
+void MeshViewer::meshVisualization(GLfloat* m_mesh_visual_data, TriMesh& tri_mesh)
+{
 	int m_i = 0;
-	for (TriMesh::FaceIter f_it = m_noised_tri_mesh.faces_begin(); f_it != m_noised_tri_mesh.faces_end(); f_it++)
+	for (TriMesh::FaceIter f_it = tri_mesh.faces_begin(); f_it != tri_mesh.faces_end(); f_it++)
 	{
-		OpenMesh::Vec3d normal = m_noised_tri_mesh.normal(*f_it);
+		OpenMesh::Vec3d normal = tri_mesh.normal(*f_it);
 
 		int v_i = 0;
-		for (TriMesh::FaceVertexIter fv_it = m_noised_tri_mesh.fv_iter(*f_it); fv_it.is_valid(); fv_it++)
+		for (TriMesh::FaceVertexIter fv_it = tri_mesh.fv_iter(*f_it); fv_it.is_valid(); fv_it++)
 		{
-			OpenMesh::Vec3d position = m_noised_tri_mesh.point(*fv_it);
+			OpenMesh::Vec3d position = tri_mesh.point(*fv_it);
 
 			// for position
 			for (int i = 0; i < 3; i++)
 			{
-				m_noised_mesh_visual_data[m_i * 3 * 9 + v_i * 9 + i] = position[i];
+				m_mesh_visual_data[m_i * 3 * 9 + v_i * 9 + i] = position[i];
 			}
 
 			// for normal
 			for (int i = 3; i < 6; i++)
 			{
-				m_noised_mesh_visual_data[m_i * 3 * 9 + v_i * 9 + i] = normal[i - 3];
-				m_noised_mesh_visual_data[m_i * 3 * 9 + v_i * 9 + i + 3] = (normal[i - 3] + 1.) / 2.; // for normal map
+				m_mesh_visual_data[m_i * 3 * 9 + v_i * 9 + i] = normal[i - 3];
+				m_mesh_visual_data[m_i * 3 * 9 + v_i * 9 + i + 3] = (normal[i - 3] + 1.) / 2.; // for normal map
 			}
 			v_i++;
 		}
 		m_i++;
 	}
-
-	m_i = 0;
-	for (TriMesh::FaceIter f_it = m_gt_tri_mesh.faces_begin(); f_it != m_gt_tri_mesh.faces_end(); f_it++)
-	{
-		OpenMesh::Vec3d normal = m_gt_tri_mesh.normal(*f_it);
-
-		int v_i = 0;
-		for (TriMesh::FaceVertexIter fv_it = m_gt_tri_mesh.fv_iter(*f_it); fv_it.is_valid(); fv_it++)
-		{
-			OpenMesh::Vec3d position = m_gt_tri_mesh.point(*fv_it);
-
-			// for position
-			for (int i = 0; i < 3; i++)
-			{
-				m_gt_mesh_visual_data[m_i * 3 * 9 + v_i * 9 + i] = position[i];
-			}
-
-			// for normal
-			for (int i = 3; i < 6; i++)
-			{
-				m_gt_mesh_visual_data[m_i * 3 * 9 + v_i * 9 + i] = normal[i - 3];
-				m_gt_mesh_visual_data[m_i * 3 * 9 + v_i * 9 + i + 3] = (normal[i - 3] + 1.) / 2.; // for normal map
-			}
-			v_i++;
-		}
-		m_i++;
-	}
-
-	delete noise;
-
-	std::cout << "Noise Mesh Ready. Number of faces: " << m_num_faces << std::endl;
+	m_is_reload = true;
+	update();
 }
 
 QSize MeshViewer::minimumSizeHint() const
@@ -299,7 +346,7 @@ void MeshViewer::paintGL()
 {
 	m_core->glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	m_core->glEnable(GL_DEPTH_TEST);
-	m_core->glEnable(GL_CULL_FACE);
+	// m_core->glEnable(GL_CULL_FACE);
 
 	if (m_is_reload)
 	{
@@ -331,7 +378,7 @@ void MeshViewer::paintGL()
 			m_core->glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(GLfloat), (GLvoid*)(6 * sizeof(GLfloat)));
 			m_core->glEnableVertexAttribArray(2);
 		}
-		else
+		else if (m_is_noise)
 		{
 			m_core->glGenVertexArrays(1, &VAOObj);
 			m_core->glGenBuffers(1, &VBOObj);
@@ -381,13 +428,50 @@ void MeshViewer::keyPressEvent(QKeyEvent *event)
 	case Qt::Key_Escape:
 		close();
 	case Qt::Key_N:
+		if (!m_is_have_noise)
+		{
+			std::cout << "No noise model, load one first..." << std::endl;
+			break;
+		}
+
 		m_is_reload = true;
-		m_is_gt = !m_is_gt;
+
+		m_is_noise = true;
+		m_is_gt = false;
+		m_is_denoised = false;
+
 		update();
+		break;
 	case Qt::Key_D:
+		if (!m_is_have_noise)
+		{
+			std::cout << "No noise model, load one first..." << std::endl;
+			break;
+		}
+
 		m_is_reload = true;
-		m_is_denoised = !m_is_denoised;
+
+		m_is_denoised = true;
+		m_is_noise = false;
+		m_is_gt = false;
+
 		update();
+		break;
+	case Qt::Key_G:
+		if (!m_is_have_gt)
+		{
+			std::cout << "No gt model, load one first..." << std::endl;
+			break;
+		}
+
+		m_is_reload = true;
+
+		m_is_gt = true;
+		m_is_noise = false;
+		m_is_denoised = false;
+
+		update();
+		break;
 	default:
 		break;
 	}
@@ -507,195 +591,157 @@ void MeshViewer::getFaceCentroid(TriMesh &mesh, std::vector<TriMesh::Point> &cen
 
 void MeshViewer::slotLoadNoise()
 {
-	QString q_noise_mesh_file = QFileDialog::getOpenFileName(this, tr("Open File"), "", tr("OBJ, OFF(*.obj *.off)"));
+	if (m_is_have_noise)
+	{
+		std::cout << "Existing noisy model, delete first." << std::endl;
+		return;
+	}
 
+	QString q_noise_mesh_file = QFileDialog::getOpenFileName(this, tr("Open File"), "", tr("OBJ, OFF(*.obj *.off)"));
+	
 	if (q_noise_mesh_file == "")
 	{
 		return;
 	}
 
 	std::string noise_model_file = q_noise_mesh_file.toStdString();
-	int start = noise_model_file.find_last_of('/');
-	int end = noise_model_file.find_last_of('.');
-	std::string noise_mode_name = noise_model_file.substr(start + 1, end - start - 1);
-	std::string name_title = "Noise_";
-	std::string required_noise_mode_name = name_title + m_model_name;
 
-	std::string name_tile = "_noisy";
-	std::string required_noise_mode_name_ = m_model_name + name_tile;
-
-	std::string name_tile_1 = "_n1";
-	std::string required_noise_mode_name_1 = m_model_name + name_tile_1;
-
-	std::string name_tile_2 = "_n2";
-	std::string required_noise_mode_name_2 = m_model_name + name_tile_2;
-
-	std::string name_tile_3 = "_n3";;
-	std::string required_noise_mode_name_3 = m_model_name + name_tile_3;
-
-	std::string name_title_ = "Denoised_";
-	std::string required_noise_mode_name__ = name_title_ + m_model_name;
-
-	if (noise_mode_name == required_noise_mode_name || noise_mode_name == required_noise_mode_name_ || noise_mode_name == required_noise_mode_name__
-		|| noise_mode_name == required_noise_mode_name_1 || noise_mode_name == required_noise_mode_name_2 || noise_mode_name == required_noise_mode_name_3)
-	{
-		m_noised_tri_mesh.clean();
-		m_vertices_kd_tree.clear();
-		m_all_face_neighbor.clear();
-		m_face_area.clear();
-		m_face_centroid.clear();
-
-		delete m_noised_mesh_visual_data;
-		delete m_denoised_mesh_visual_data;
-
-		// reset noisy similar to meshInitializedGet
-		/*--------------------------------------------------*/
-
-		OpenMesh::IO::read_mesh(m_noised_tri_mesh, noise_model_file);
-
-		m_noised_tri_mesh.request_face_normals();
-		m_noised_tri_mesh.request_vertex_normals();
-		m_noised_tri_mesh.update_normals();
-
-		int new_num_faces = m_noised_tri_mesh.n_faces();
-
-		if (new_num_faces != m_num_faces)
-		{
-			std::cout << "!!!Not match noised model!!!" << std::endl;
-			return;
-		}
-
-		m_data_manager->setNoisyMesh(m_noised_tri_mesh);
-		m_data_manager->setDenoisedMesh(m_noised_tri_mesh);
-		std::cout << "Load Existed Noisy Mesh " << noise_model_file << " Successfully" << std::endl;
-
-		m_center = OpenMesh::Vec3d(0., 0., 0.);
-		for (TriMesh::VertexIter v_it = m_noised_tri_mesh.vertices_begin(); v_it != m_noised_tri_mesh.vertices_end(); v_it++)
-		{
-			OpenMesh::Vec3d center_position_temp = m_noised_tri_mesh.point(*v_it);
-			m_center += center_position_temp;
-		}
-		m_center /= int(m_noised_tri_mesh.n_vertices());
-
-		m_max = 0;
-		for (TriMesh::VertexIter v_it = m_noised_tri_mesh.vertices_begin(); v_it != m_noised_tri_mesh.vertices_end(); v_it++)
-		{
-			OpenMesh::Vec3d position_temp = m_noised_tri_mesh.point(*v_it) - m_center;
-			for (int i = 0; i < 3; i++)
-			{
-				double temp_max = abs(position_temp[i]);
-				if (temp_max > m_max)
-				{
-					m_max = temp_max;
-				}
-			}
-		}
-
-		for (TriMesh::VertexIter v_it = m_noised_tri_mesh.vertices_begin(); v_it != m_noised_tri_mesh.vertices_end(); v_it++)
-		{
-			m_noised_tri_mesh.point(*v_it) -= m_center;
-			m_noised_tri_mesh.point(*v_it) /= m_max / 1.0;
-			OpenMesh::Vec3d center_position_temp = m_noised_tri_mesh.point(*v_it);
-			m_vertices_kd_tree.push_back(glm::vec3(center_position_temp[0], center_position_temp[1], center_position_temp[2]));
-		}
-
-		m_flann_kd_tree = shen::Geometry::EasyFlann(m_vertices_kd_tree);
-
-		FaceNeighborType face_neighbor_type = kVertexBased;
-
-		getAllFaceNeighbor(m_noised_tri_mesh, m_all_face_neighbor, face_neighbor_type, false);
-		getFaceArea(m_noised_tri_mesh, m_face_area);
-		getFaceCentroid(m_noised_tri_mesh, m_face_centroid);
-
-		m_noised_mesh_visual_data = new GLfloat[3 * 9 * m_num_faces];
-		m_denoised_mesh_visual_data = new GLfloat[3 * 9 * m_num_faces];
-
-		int m_i = 0;
-		for (TriMesh::FaceIter f_it = m_noised_tri_mesh.faces_begin(); f_it != m_noised_tri_mesh.faces_end(); f_it++)
-		{
-			OpenMesh::Vec3d normal = m_noised_tri_mesh.normal(*f_it);
-
-			int v_i = 0;
-			for (TriMesh::FaceVertexIter fv_it = m_noised_tri_mesh.fv_iter(*f_it); fv_it.is_valid(); fv_it++)
-			{
-				OpenMesh::Vec3d position = m_noised_tri_mesh.point(*fv_it);
-
-				// for position
-				for (int i = 0; i < 3; i++)
-				{
-					m_noised_mesh_visual_data[m_i * 3 * 9 + v_i * 9 + i] = position[i];
-				}
-
-				// for normal
-				for (int i = 3; i < 6; i++)
-				{
-					m_noised_mesh_visual_data[m_i * 3 * 9 + v_i * 9 + i] = normal[i - 3];
-					m_noised_mesh_visual_data[m_i * 3 * 9 + v_i * 9 + i + 3] = (normal[i - 3] + 1.) / 2.; // for normal map
-				}
-				v_i++;
-			}
-			m_i++;
-		}
-		/*--------------------------------------------------*/
-
-		m_is_reload = true;
-		m_is_gt = false;
-		m_is_denoised = false;
-
-		update();
-	}
-	else
-	{
-		std::cout << "!!!Not match noised model!!!" << std::endl;
-	}
+	meshInitializedGet(noise_model_file.c_str(), false);
 }
 
 void MeshViewer::slotLoadGT()
 {
+	if (m_is_have_gt)
+	{
+		std::cout << "Existing gt model, delete first." << std::endl;
+		return;
+	}
 
+	QString q_gt_mesh_file = QFileDialog::getOpenFileName(this, tr("Open File"), "", tr("OBJ, OFF(*.obj *.off)"));
+
+	if (q_gt_mesh_file == "" || m_is_have_gt)
+	{
+		return;
+	}
+
+	std::string gt_model_file = q_gt_mesh_file.toStdString();
+
+	meshInitializedGet(gt_model_file.c_str(), true);
 }
 
-void MeshViewer::slotGenNoise(double noise_level, int noise_type)
+void MeshViewer::slotDelete()
 {
-	if (m_current_file_name != "waiting update" || m_current_noise_level != noise_level || m_current_noise_type != noise_type);
+	delete m_data_manager;
+	m_noised_tri_mesh.clean();
+	m_gt_tri_mesh.clean();
+	m_vertices_kd_tree.clear();
+	m_all_face_neighbor.clear();
+	m_face_area.clear();
+	m_face_centroid.clear();
+
+	delete m_gt_mesh_visual_data;
+	delete m_noised_mesh_visual_data;
+	delete m_denoised_mesh_visual_data;
+
+	m_is_have_gt = false;
+	m_is_have_noise = false;
+
+	m_num_faces = 0;
+	m_data_manager = new DataManager();
+	m_is_reload = true;
+	update();
+}
+
+void MeshViewer::slotGenNoise(double noise_level, QString noise_type)
+{
+	if (!m_is_have_gt)
 	{
-		delete m_data_manager;
+		std::cout << "Load GT first!" << std::endl;
+		return;
+	}
+
+	if (m_is_have_noise)
+	{
 		m_noised_tri_mesh.clean();
-		m_gt_tri_mesh.clean();
 		m_vertices_kd_tree.clear();
 		m_all_face_neighbor.clear();
 		m_face_area.clear();
-		m_gt_face_area.clear();
 		m_face_centroid.clear();
-		m_gt_face_centroid.clear();
-
-		m_current_file_name = "waiting update";
-		int start = m_current_file_name.find_last_of('/');
-		int end = m_current_file_name.find_last_of('.');
-		m_model_name = m_current_file_name.substr(start + 1, end - start - 1);
-		m_current_noise_level = noise_level;
-		m_current_noise_type = noise_type;
 
 		delete m_noised_mesh_visual_data;
-		delete m_gt_mesh_visual_data;
 		delete m_denoised_mesh_visual_data;
-
-		meshInitializedGet(m_current_file_name.c_str(), true, noise_level, noise_type);
-		m_is_reload = true;
-		m_is_gt = false;
-		m_is_denoised = false;
-
-		std::string res_name = "./Results/Noise_";
-		std::string tail = ".obj";
-		res_name = res_name + m_model_name + tail;
-		m_data_manager->ExportMeshToFile(res_name);
-		std::cout << "Noisy Model Save Success!" << std::endl;
-
-		update();
 	}
+
+	m_is_have_noise = true;
+	m_data_manager->MeshToOriginalMesh();
+
+	Noise* noise;
+	if (noise_type == "Gaussian")
+	{
+		noise = new Noise(m_data_manager, noise_level, 0);
+	}
+	else
+	{
+		noise = new Noise(m_data_manager, noise_level, 1);
+	}
+	noise->addNoise();
+
+	m_noised_tri_mesh = m_data_manager->getNoisyMesh();
+
+	m_noised_tri_mesh.request_face_normals();
+	m_noised_tri_mesh.request_vertex_normals();
+	m_noised_tri_mesh.update_normals();
+
+	m_noised_mesh_visual_data = new GLfloat[3 * 9 * m_num_faces];
+	m_denoised_mesh_visual_data = new GLfloat[3 * 9 * m_num_faces];
+
+	m_center = OpenMesh::Vec3d(0., 0., 0.);
+	for (TriMesh::VertexIter v_it = m_noised_tri_mesh.vertices_begin(); v_it != m_noised_tri_mesh.vertices_end(); v_it++)
+	{
+		OpenMesh::Vec3d center_position_temp = m_noised_tri_mesh.point(*v_it);
+		m_center += center_position_temp;
+	}
+	m_center /= int(m_noised_tri_mesh.n_vertices());
+
+	m_max = 0;
+	for (TriMesh::VertexIter v_it = m_noised_tri_mesh.vertices_begin(); v_it != m_noised_tri_mesh.vertices_end(); v_it++)
+	{
+		OpenMesh::Vec3d position_temp = m_noised_tri_mesh.point(*v_it) - m_center;
+		for (int i = 0; i < 3; i++)
+		{
+			double temp_max = abs(position_temp[i]);
+			if (temp_max > m_max)
+			{
+				m_max = temp_max;
+			}
+		}
+	}
+
+	for (TriMesh::VertexIter v_it = m_noised_tri_mesh.vertices_begin(); v_it != m_noised_tri_mesh.vertices_end(); v_it++)
+	{
+		m_noised_tri_mesh.point(*v_it) -= m_center;
+		m_noised_tri_mesh.point(*v_it) /= m_max / 1.0;
+		OpenMesh::Vec3d center_position_temp = m_noised_tri_mesh.point(*v_it);
+		m_vertices_kd_tree.push_back(glm::vec3(center_position_temp[0], center_position_temp[1], center_position_temp[2]));
+	}
+
+	m_flann_kd_tree = shen::Geometry::EasyFlann(m_vertices_kd_tree);
+
+	FaceNeighborType face_neighbor_type = kVertexBased;
+
+	getAllFaceNeighbor(m_noised_tri_mesh, m_all_face_neighbor, face_neighbor_type, false);
+	getFaceArea(m_noised_tri_mesh, m_face_area);
+	getFaceCentroid(m_noised_tri_mesh, m_face_centroid);
+
+	m_is_noise = true;
+	m_is_denoised = false;
+	m_is_gt = false;
+
+	meshVisualization(m_noised_mesh_visual_data, m_noised_tri_mesh);
+	meshVisualization(m_denoised_mesh_visual_data, m_noised_tri_mesh);
 }
 
-void MeshViewer::slotDenoise()
+void MeshViewer::slotDenoise(int gcns, int normal_iterations)
 {
 	torch::jit::script::Module DGCNN_coarse;
 	torch::jit::script::Module DGCNN_fine;

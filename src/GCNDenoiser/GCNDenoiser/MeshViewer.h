@@ -78,8 +78,13 @@ private:
 	int m_current_noise_type;
 
 	bool m_is_reload = false;
+
+	bool m_is_noise = true;
 	bool m_is_gt = false;
 	bool m_is_denoised = false;
+
+	bool m_is_have_noise = true;
+	bool m_is_have_gt = true;
 
 	OpenMesh::Vec3d m_center;
 	double m_max = 0.;
@@ -94,14 +99,13 @@ private:
 
 	std::vector<std::vector<TriMesh::FaceHandle>> m_all_face_neighbor;
 	std::vector<double> m_face_area;
-	std::vector<double> m_gt_face_area;
 	std::vector<TriMesh::Point> m_face_centroid;
-	std::vector<TriMesh::Point> m_gt_face_centroid;
 
 	std::vector<glm::vec3> m_vertices_kd_tree;
 	shen::Geometry::EasyFlann m_flann_kd_tree;
 
-	void meshInitializedGet(const char* file_name, bool is_original, double noise_level, int noise_type);
+	void meshInitializedGet(const char* file_name, bool is_original);
+	void meshVisualization(GLfloat* m_mesh_visual_data, TriMesh& tri_mesh);
 
 	// same with mesh denoising base
 	enum FaceNeighborType { kVertexBased, kEdgeBased, kRadiusBased };
@@ -114,6 +118,7 @@ private:
 public slots:
 	void slotLoadNoise();
 	void slotLoadGT();
-	void slotGenNoise(double noise_level, int noise_type);
-	void slotDenoise();
+	void slotDelete();
+	void slotGenNoise(double noise_level, QString noise_type);
+	void slotDenoise(int gcns, int normal_iterations);
 };

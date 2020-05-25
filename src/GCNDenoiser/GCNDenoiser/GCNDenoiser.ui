@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>600</width>
-    <height>400</height>
+    <width>1021</width>
+    <height>920</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -18,10 +18,224 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>30</y>
-      <width>581</width>
-      <height>361</height>
+      <y>40</y>
+      <width>1001</width>
+      <height>871</height>
      </rect>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="button_load_noise">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>10</y>
+      <width>71</width>
+      <height>23</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Load Noise</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="button_load_gt">
+    <property name="geometry">
+     <rect>
+      <x>90</x>
+      <y>10</y>
+      <width>61</width>
+      <height>23</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Load GT</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="button_denoise">
+    <property name="geometry">
+     <rect>
+      <x>940</x>
+      <y>10</y>
+      <width>71</width>
+      <height>23</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Denoise</string>
+    </property>
+   </widget>
+   <widget class="QSpinBox" name="box_gcns">
+    <property name="geometry">
+     <rect>
+      <x>782</x>
+      <y>12</y>
+      <width>31</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="minimum">
+     <number>1</number>
+    </property>
+    <property name="maximum">
+     <number>2</number>
+    </property>
+    <property name="value">
+     <number>1</number>
+    </property>
+   </widget>
+   <widget class="QSpinBox" name="box_iterations">
+    <property name="geometry">
+     <rect>
+      <x>897</x>
+      <y>12</y>
+      <width>33</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="minimum">
+     <number>1</number>
+    </property>
+    <property name="maximum">
+     <number>20</number>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_gcns">
+    <property name="geometry">
+     <rect>
+      <x>750</x>
+      <y>10</y>
+      <width>31</width>
+      <height>25</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>10</pointsize>
+     </font>
+    </property>
+    <property name="text">
+     <string>GCNs</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_iterations">
+    <property name="geometry">
+     <rect>
+      <x>820</x>
+      <y>10</y>
+      <width>71</width>
+      <height>25</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>10</pointsize>
+     </font>
+    </property>
+    <property name="text">
+     <string>Iterations</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="button_delete">
+    <property name="geometry">
+     <rect>
+      <x>540</x>
+      <y>10</y>
+      <width>51</width>
+      <height>23</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Delete</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_level">
+    <property name="geometry">
+     <rect>
+      <x>160</x>
+      <y>10</y>
+      <width>81</width>
+      <height>25</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>10</pointsize>
+     </font>
+    </property>
+    <property name="text">
+     <string>Noise level</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_type">
+    <property name="geometry">
+     <rect>
+      <x>290</x>
+      <y>10</y>
+      <width>81</width>
+      <height>25</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>10</pointsize>
+     </font>
+    </property>
+    <property name="text">
+     <string>Noise type</string>
+    </property>
+   </widget>
+   <widget class="QComboBox" name="box_type">
+    <property name="geometry">
+     <rect>
+      <x>370</x>
+      <y>10</y>
+      <width>81</width>
+      <height>22</height>
+     </rect>
+    </property>
+    <item>
+     <property name="text">
+      <string>Gaussian</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>Impulsive</string>
+     </property>
+    </item>
+   </widget>
+   <widget class="QPushButton" name="button_gen_noise">
+    <property name="geometry">
+     <rect>
+      <x>460</x>
+      <y>10</y>
+      <width>71</width>
+      <height>23</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Gen. noise</string>
+    </property>
+   </widget>
+   <widget class="QDoubleSpinBox" name="box_level">
+    <property name="geometry">
+     <rect>
+      <x>240</x>
+      <y>10</y>
+      <width>41</width>
+      <height>22</height>
+     </rect>
+    </property>
+    <property name="decimals">
+     <number>1</number>
+    </property>
+    <property name="maximum">
+     <double>1.000000000000000</double>
+    </property>
+    <property name="singleStep">
+     <double>0.100000000000000</double>
+    </property>
+    <property name="value">
+     <double>0.300000000000000</double>
     </property>
    </widget>
   </widget>
@@ -31,7 +245,7 @@
   <customwidget>
    <class>MeshViewer</class>
    <extends>QOpenGLWidget</extends>
-   <header location="global">meshviewer.h</header>
+   <header>meshviewer.h</header>
   </customwidget>
  </customwidgets>
  <resources>
