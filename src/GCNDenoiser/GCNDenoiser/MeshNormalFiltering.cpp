@@ -8,27 +8,7 @@ MeshNormalFiltering::MeshNormalFiltering(DataManager *_data_manager)
 	initParameters();
 }
 
-// shen
-void MeshNormalFiltering::denoiseWithGuidance(std::vector<TriMesh::Normal> guided_normals)
-{
-	// get data
-	TriMesh mesh = data_manager_->getNoisyMesh();
-
-	if (mesh.n_vertices() == 0)
-		return;
-
-	// update face normal
-	std::vector<TriMesh::Normal> filtered_normals;
-	// updateFilteredNormalsWithGuidance(mesh, guided_normals, filtered_normals);
-	updateFilteredNormalsUseGuidance(mesh, guided_normals, filtered_normals);
-	// updateFilteredNormalsUseGuidance(mesh, guided_normals);
-
-	// update data
-	data_manager_->setMesh(mesh);
-	data_manager_->setDenoisedMesh(mesh);
-}
-
-void MeshNormalFiltering::finetuneWithGuidance(std::vector<TriMesh::Normal> guided_normals)
+void MeshNormalFiltering::denoiseWithPredictedNormal(std::vector<TriMesh::Normal> guided_normals, int normal_iterations)
 {
 	// get data
 	TriMesh mesh = data_manager_->getDenoisedMesh();
@@ -38,8 +18,8 @@ void MeshNormalFiltering::finetuneWithGuidance(std::vector<TriMesh::Normal> guid
 
 	// update face normal
 	std::vector<TriMesh::Normal> filtered_normals;
-	updateFilteredNormalsWithGuidance(mesh, guided_normals, filtered_normals);
-	// updateFilteredNormalsUseGuidance(mesh, guided_normals);
+	normal_iteration_number = normal_iterations;
+	updateFilteredNormalsWithPredictedNormal(mesh, guided_normals);
 
 	// update data
 	data_manager_->setMesh(mesh);
@@ -56,7 +36,6 @@ void MeshNormalFiltering::initParameters()
 	multiple_sigma_s = 1;
 	normal_iteration_number = 12;
 	sigma_r = 0.3;
-	smoothness = 0.0002;
 	vertex_iteration_number = 16;
 }
 
@@ -188,9 +167,9 @@ double MeshNormalFiltering::getSigmaS(double multiple, std::vector<TriMesh::Poin
 	return sigma_s * multiple / num;
 }
 
-// shen
-void MeshNormalFiltering::updateFilteredNormalsWithGuidance(TriMesh &mesh, std::vector<TriMesh::Normal> guided_normals, std::vector<TriMesh::Normal> &filtered_normals)
+void MeshNormalFiltering::updateFilteredNormalsWithPredictedNormal(TriMesh &mesh, std::vector<TriMesh::Normal> guided_normals)
 {
+	std::vector<TriMesh::Normal> filtered_normals;
 	filtered_normals.resize((int)mesh.n_faces());
 	guided_normals.resize((int)mesh.n_faces());
 
@@ -213,11 +192,12 @@ void MeshNormalFiltering::updateFilteredNormalsWithGuidance(TriMesh &mesh, std::
 	{
 		if (iter == 0)
 		{
-			std::cout << "\t\t Normal Filtering..." << std::endl;;
+			std::cout << "\tNormal Filtering..." << std::endl;;
 		}
 		else
 		{
-			std::cout << "\t\t Normal Iteration" << iter << "/" << normal_iteration_number << std::endl;;
+			std::cout << "\tNormal Iteration" << iter << "/" << normal_iteration_number;
+			printf("\33[2k\r");
 		}
 		getFaceCentroid(mesh, face_centroid);
 		double sigma_s = getSigmaS(multiple_sigma_s, face_centroid, mesh);
@@ -256,64 +236,8 @@ void MeshNormalFiltering::updateFilteredNormalsWithGuidance(TriMesh &mesh, std::
 		}
 
 		// immediate update vertex position
-		std::cout << "\t\tUpdating Vertices..." << std::endl;
 		updateVertexPosition(mesh, filtered_normals, vertex_iteration_number, false);
 	}
-
-	mesh.request_face_normals();
-	mesh.update_face_normals();
-}
-
-void MeshNormalFiltering::updateFilteredNormalsUseGuidance(TriMesh &mesh, std::vector<TriMesh::Normal> guided_normals, std::vector<TriMesh::Normal> &filtered_normals)
-{
-	filtered_normals.resize((int)mesh.n_faces());
-	guided_normals.resize((int)mesh.n_faces());
-
-	FaceNeighborType face_neighbor_type = (face_neighbor_index == 0) ? kRadiusBased : kVertexBased;
-
-	double radius = 1.0;
-	if (face_neighbor_type == kRadiusBased)
-		radius = getRadius(multiple_radius, mesh);
-
-	std::vector<std::vector<TriMesh::FaceHandle> > all_face_neighbor((int)mesh.n_faces());
-	getAllFaceNeighborGMNF(mesh, face_neighbor_type, radius, include_central_face, all_face_neighbor);
-	getFaceNormal(mesh, filtered_normals);
-
-	std::vector<double> face_area((int)mesh.n_faces());
-	std::vector<TriMesh::Point> face_centroid((int)mesh.n_faces());
-	std::vector<std::pair<double, TriMesh::Normal> > range_and_mean_normal((int)mesh.n_faces());
-
-	getFaceCentroid(mesh, face_centroid);
-	double sigma_s = getSigmaS(multiple_sigma_s, face_centroid, mesh);
-	getFaceArea(mesh, face_area);
-
-	// Filtered Face Normals
-	std::cout << "\t\t Normal Filtering..." << std::endl;
-	for (TriMesh::FaceIter f_it = mesh.faces_begin(); f_it != mesh.faces_end(); f_it++)
-	{
-		int index = f_it->idx();
-		const std::vector<TriMesh::FaceHandle> face_neighbor = all_face_neighbor[index];
-		TriMesh::Normal filtered_normal(0.0, 0.0, 0.0);
-		for (int j = 0; j < (int)face_neighbor.size(); j++)
-		{
-			int current_face_index = face_neighbor[j].idx();
-
-			double spatial_dis = (face_centroid[index] - face_centroid[current_face_index]).length();
-			double spatial_weight = GaussianWeight(spatial_dis, sigma_s);
-			double range_dis = (guided_normals[index] - guided_normals[current_face_index]).length();
-			double range_weight = GaussianWeight(range_dis, sigma_r);
-
-			filtered_normal += guided_normals[current_face_index] * (face_area[current_face_index] * spatial_weight * range_weight);
-		}
-		if (face_neighbor.size())
-		{
-			filtered_normals[index] = filtered_normal.normalize();
-		}
-	}
-
-	// immediate update vertex position
-	std::cout << "\t\tUpdating Vertices..." << std::endl;
-	updateVertexPosition(mesh, filtered_normals, vertex_iteration_number, false);
 
 	mesh.request_face_normals();
 	mesh.update_face_normals();

@@ -12,9 +12,7 @@ public:
 	MeshNormalFiltering(DataManager *_data_manager);
 	~MeshNormalFiltering() {}
 
-	// shen
-	void denoiseWithGuidance(std::vector<TriMesh::Normal> guided_normals);
-	void finetuneWithGuidance(std::vector<TriMesh::Normal> guided_normals);
+	void denoiseWithPredictedNormal(std::vector<TriMesh::Normal> guided_normals, int normal_iterations);
 
 private:
 	void initParameters();
@@ -32,8 +30,7 @@ private:
 	double getSigmaS(double multiple, std::vector<TriMesh::Point> &centroid, TriMesh &mesh);
 
 	// shen
-	void updateFilteredNormalsWithGuidance(TriMesh &mesh, std::vector<TriMesh::Normal> guided_normals, std::vector<TriMesh::Normal> &filtered_normals);
-	void updateFilteredNormalsUseGuidance(TriMesh &mesh, std::vector<TriMesh::Normal> guided_normals, std::vector<TriMesh::Normal> &filtered_normals);
+	void updateFilteredNormalsWithPredictedNormal(TriMesh &mesh, std::vector<TriMesh::Normal> guided_normals);
 
 private:
 	int denoise_index;
@@ -44,5 +41,4 @@ private:
 	int	normal_iteration_number;
 	double	sigma_r;
 	int	vertex_iteration_number;
-	double smoothness;
 };

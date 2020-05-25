@@ -19,7 +19,7 @@ void GCNDenoiser::bindSlotsAndSignals()
 	connect(ui.button_delete, SIGNAL(clicked()), ui.mesh_viewer, SLOT(slotDelete()));
 
 	connect(ui.button_denoise, SIGNAL(clicked()), this, SLOT(slotDenoise()));
-	connect(this, SIGNAL(signalDenoise(int, int)), ui.mesh_viewer, SLOT(signalDenoise(int, int)));
+	connect(this, SIGNAL(signalDenoise(int, int)), ui.mesh_viewer, SLOT(slotDenoise(int, int)));
 }
 
 void GCNDenoiser::slotGenNoise()
