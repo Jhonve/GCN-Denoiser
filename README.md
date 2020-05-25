@@ -45,4 +45,8 @@ Executable demo, the corresponding code, and some sampled mesh are supplied.
 
 One version of GCN pre-trained model for synthetic models is supplied.
 
+### Acknowledgements
+
+Part of this implementations is based on [DGCNN](https://github.com/WangYueFt/dgcnn) and [GNF](https://github.com/bldeng/GuidedDenoising).
+
 ### Keep Updating...
