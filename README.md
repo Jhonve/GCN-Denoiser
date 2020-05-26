@@ -7,7 +7,7 @@ Qt and Pytorch implementation for GCN-Denoiser
 
 ### Interface:
 
-![](/imgs/new_interface.png)
+![interface|60%](/imgs/new_interface.png)
 
 ## Code:
 
