@@ -789,14 +789,14 @@ void MeshViewer::slotDenoise(int gcns, int normal_iterations)
 	}
 	catch (const c10::Error& e)
 	{
-		std::cerr << "\tError of loading the model!" << std::endl;
+		std::cerr << "Error of loading pre-trained models!" << std::endl;
 		return;
 	}
 	GCN_1.to(at::kCUDA);
 	GCN_1.eval();
 	GCN_2.to(at::kCUDA);
 	GCN_2.eval();
-	std::cout << "\tPre-trained Model Load Success!" << std::endl;
+	std::cout << "Pre-trained models load success!" << std::endl;
 
 	// pre-trained parameters
 	int p_num_ring = 2;
