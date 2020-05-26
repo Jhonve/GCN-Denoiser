@@ -37,7 +37,7 @@ bunny_0_2/*.mat are sampled patches from the noisy *bunny* model with 0.2 level 
 
 ### Denoising Interface:
 
-Executable demo, the corresponding code, and some sampled mesh are supplied. *New simplified version has been updated*
+Executable demo, the corresponding code, and some sampled meshes are supplied. *New simplified version has been updated*
 
 - For code, Visual Studio 2017 and Qt 5.12 are required.
 
