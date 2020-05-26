@@ -88,6 +88,11 @@ void MeshViewer::meshInitializedGet(const char* file_name, bool is_original)
 		m_is_gt = false;
 		m_is_denoised = false;
 
+		m_current_file_name = file_name;
+		int start = m_current_file_name.find_last_of('/');
+		int end = m_current_file_name.find_last_of('.');
+		m_model_name = m_current_file_name.substr(start + 1, end - start - 1);
+
 		m_data_manager->setNoisyMesh(m_noised_tri_mesh);
 		m_data_manager->setDenoisedMesh(m_noised_tri_mesh);
 
@@ -157,6 +162,11 @@ void MeshViewer::meshInitializedGet(const char* file_name, bool is_original)
 			}
 		}
 		std::cout << "\tNumber of faces: " << m_num_faces << std::endl;
+
+		m_current_file_name = file_name;
+		int start = m_current_file_name.find_last_of('/');
+		int end = m_current_file_name.find_last_of('.');
+		m_model_name = m_current_file_name.substr(start + 1, end - start - 1);
 
 		m_is_have_gt = true;
 
@@ -1037,23 +1047,295 @@ void MeshViewer::slotDenoise(int gcns, int normal_iterations)
 
 	MeshNormalFiltering *mesh_denoising = new MeshNormalFiltering(m_data_manager);
 
-	mesh_denoising->denoiseWithPredictedNormal(predicted_normal, normal_iterations);
+	if (gcns == 1)
+	{
+		mesh_denoising->denoiseWithPredictedNormal(predicted_normal, normal_iterations);
+	}
+	else
+	{
+		mesh_denoising->denoiseWithPredictedNormal(predicted_normal, 1);
+	}
 
-	std::cout << "\tDenoising Finished! Start calculate Error..." << std::endl;
+	std::cout << "\tFirst Denoising Finished! Start calculate Error..." << std::endl;
 	double error = mesh_denoising->getError();
-	std::cout << "Finish! Ea: " << error << std::endl;
+	std::cout << "First Finish! Ea: " << error << std::endl;
 	// double ea = mesh_denoising->getErrorMSAE();
-	// std::cout << "Finish! MSE: " << error << " MSAE: " << ea << std::endl;
+	// std::cout << "First Finish! MSE: " << error << " MSAE: " << ea << std::endl;
 	// double dv = mesh_denoising->getErrorDv();
-	// std::cout << "Coarse Denoising Finish! MSE: " << error << " MSAE: " << ea << " Dv: " << dv << std::endl;
+	// std::cout << "First Finish! MSE: " << error << " MSAE: " << ea << " Dv: " << dv << std::endl;
 
 	std::string res_name = "./Results/Denoised_";
-	std::string tail = ".obj";
+	std::string tail = "_1.obj";
 	res_name = res_name + m_model_name + tail;
 	m_data_manager->ExportMeshToFile(res_name);
 	std::cout << "Result Save Success!" << std::endl;
 
 	predicted_normal.clear();
+
+	if (gcns > 1)
+	{
+		std::cout << "Start second denoising..." << std::endl;
+		TriMesh temp_denoised_mesh = m_data_manager->getDenoisedMesh();
+
+		std::vector<TriMesh::Normal> predicted_normal_exten(m_num_faces);
+		std::vector<double> face_area;
+		std::vector<TriMesh::Point> face_centroid;
+
+		std::vector<glm::vec3> vertices_kd_tree;
+		for (TriMesh::VertexIter v_it = temp_denoised_mesh.vertices_begin(); v_it != temp_denoised_mesh.vertices_end(); v_it++)
+		{
+			temp_denoised_mesh.point(*v_it) -= m_center;
+			temp_denoised_mesh.point(*v_it) /= m_max / 1.0;
+			OpenMesh::Vec3d center_position_temp = temp_denoised_mesh.point(*v_it);
+			vertices_kd_tree.push_back(glm::vec3(center_position_temp[0], center_position_temp[1], center_position_temp[2]));
+		}
+
+		shen::Geometry::EasyFlann flann_kd_tree = shen::Geometry::EasyFlann(vertices_kd_tree);
+		getFaceArea(temp_denoised_mesh, face_area);
+		getFaceCentroid(temp_denoised_mesh, face_centroid);
+
+		TriMesh::FaceIter all_f_it_fine = m_noised_tri_mesh.faces_begin();
+		TriMesh::FaceIter all_gt_f_it_fine = m_gt_tri_mesh.faces_begin();
+		for (int i_batch = 0; i_batch < num_batches; i_batch++)
+		{
+			std::cout << "\tBatch idx: " << i_batch << "/" << num_batches;
+			printf("\33[2k\r");
+			std::vector<at::Tensor> input_tensors(batch_size);
+			std::vector<glm::dmat3x3> trans_mats(batch_size);
+			std::vector<bool> is_valid(batch_size);
+			std::vector<TriMesh::Normal> noisy_normal(batch_size);
+
+			int start_face_idx = i_batch * batch_size;
+			int end_face_idx = (i_batch + 1) * batch_size;
+
+#pragma omp parallel for
+			for (int i_face = start_face_idx; i_face < end_face_idx; i_face++)
+			{
+				TriMesh::FaceIter f_it = all_f_it_fine;
+				TriMesh::FaceIter gt_f_it = all_gt_f_it_fine;
+
+				for (int i = start_face_idx; i < i_face; i++)
+				{
+					f_it++;
+					gt_f_it++;
+				}
+
+				OpenMesh::Vec3d gt_normal_om = m_gt_tri_mesh.normal(*gt_f_it);
+				glm::dvec3 gt_normal = glm::dvec3(gt_normal_om[0], gt_normal_om[1], gt_normal_om[2]);
+				PatchData* patch_data = new PatchData(temp_denoised_mesh, m_all_face_neighbor, face_area, face_centroid, f_it, flann_kd_tree, gt_normal, p_num_ring, p_radius_region);
+				at::Tensor temp_input_tensor;
+				if (patch_data->m_patch_num_faces == 1 || patch_data->m_aligned_patch_num_faces <= 1)
+				{
+					// std::cout << "false" << std::endl;
+					is_valid[i_face - start_face_idx] = false;
+					noisy_normal[i_face - start_face_idx] = m_noised_tri_mesh.normal(*f_it);
+					temp_input_tensor = torch::zeros({ 1, 20, p_num_neighbors });
+					temp_input_tensor = temp_input_tensor.toType(c10::ScalarType::Float);
+				}
+				else
+				{
+					is_valid[i_face - start_face_idx] = true;
+					noisy_normal[i_face - start_face_idx] = m_noised_tri_mesh.normal(*f_it);
+
+					int num_patch_faces = patch_data->m_aligned_patch_num_faces;
+					trans_mats[i_face - start_face_idx] = patch_data->m_matrix;
+					temp_input_tensor = torch::from_blob(patch_data->m_temp_network_input, { 1, num_patch_faces, 17 + 3 }, c10::ScalarType::Double);
+
+					temp_input_tensor = temp_input_tensor.toType(c10::ScalarType::Float);
+
+					if (num_patch_faces >= p_num_neighbors)
+					{
+						temp_input_tensor = temp_input_tensor.slice(1, 0, p_num_neighbors);
+					}
+					else
+					{
+						at::Tensor temp_tensor_cat = torch::zeros({ 1, p_num_neighbors - num_patch_faces, 20 });
+						temp_input_tensor = torch::cat({ temp_input_tensor, temp_tensor_cat }, 1);
+					}
+
+					temp_input_tensor = temp_input_tensor.permute({ 0, 2, 1 });
+				}
+
+				input_tensors[i_face - start_face_idx] = temp_input_tensor;
+				delete patch_data;
+			}
+
+			std::vector<at::Tensor> batch_tensors_vec;
+			for (int i_s = 0; i_s < batch_size; i_s++)
+			{
+				batch_tensors_vec.push_back(input_tensors[i_s]);
+			}
+			at::Tensor batch_tensors = torch::cat(batch_tensors_vec, 0);
+
+			std::vector<torch::jit::IValue> jit_inputs;
+			jit_inputs.push_back(batch_tensors.to(at::kCUDA));
+			at::Tensor output = GCN_2.forward(jit_inputs).toTensor();
+			output = output.cpu();
+			auto out_reader = output.accessor<float, 2>();
+
+#pragma omp parallel for
+			for (int i_s = 0; i_s < batch_size; i_s++)
+			{
+				if (is_valid[i_s] == true)
+				{
+					float x = out_reader[i_s][0];
+					float y = out_reader[i_s][1];
+					float z = out_reader[i_s][2];
+					glm::dvec3 temp_res((double)x, (double)y, (double)z);
+					temp_res = glm::normalize(temp_res);
+					temp_res = trans_mats[i_s] * temp_res;
+					TriMesh::Normal temp_normal(temp_res[0], temp_res[1], temp_res[2]);
+					predicted_normal_exten[i_batch * batch_size + i_s] = temp_normal;
+				}
+				else
+				{
+					predicted_normal_exten[i_batch * batch_size + i_s] = noisy_normal[i_s];
+				}
+			}
+
+			batch_tensors_vec.clear();
+			jit_inputs.clear();
+
+			input_tensors.clear();
+			trans_mats.clear();
+			is_valid.clear();
+			noisy_normal.clear();
+
+			for (int i = 0; i < batch_size; i++)
+			{
+				all_f_it_fine++;
+				all_gt_f_it_fine++;
+			}
+		}
+
+		if (num_last_batch > 0)
+		{
+			std::cout << "\tBatch idx: " << num_batches << "/" << num_batches;
+			printf("\33[2k\r");
+			std::vector<at::Tensor> input_tensors(num_last_batch);
+			std::vector<glm::dmat3x3> trans_mats(num_last_batch);
+			std::vector<bool> is_valid(num_last_batch);
+			std::vector<TriMesh::Normal> noisy_normal(num_last_batch);
+
+			int start_face_idx = num_batches * batch_size;
+			int end_face_idx = num_batches * batch_size + num_last_batch;
+
+#pragma omp parallel for
+			for (int i_face = start_face_idx; i_face < end_face_idx; i_face++)
+			{
+				TriMesh::FaceIter f_it = all_f_it_fine;
+				TriMesh::FaceIter gt_f_it = all_gt_f_it_fine;
+
+				for (int i = start_face_idx; i < i_face; i++)
+				{
+					f_it++;
+					gt_f_it++;
+				}
+
+				OpenMesh::Vec3d gt_normal_om = m_gt_tri_mesh.normal(*gt_f_it);
+				glm::dvec3 gt_normal = glm::dvec3(gt_normal_om[0], gt_normal_om[1], gt_normal_om[2]);
+				PatchData* patch_data = new PatchData(temp_denoised_mesh, m_all_face_neighbor, face_area, face_centroid, f_it, flann_kd_tree, gt_normal, p_num_ring, p_radius_region);
+				at::Tensor temp_input_tensor;
+				if (patch_data->m_patch_num_faces == 1 || patch_data->m_aligned_patch_num_faces <= 1)
+				{
+					is_valid[i_face - start_face_idx] = false;
+					noisy_normal[i_face - start_face_idx] = m_noised_tri_mesh.normal(*f_it);
+					temp_input_tensor = torch::zeros({ 1, 20, p_num_neighbors });
+					temp_input_tensor = temp_input_tensor.toType(c10::ScalarType::Float);
+				}
+				else
+				{
+					is_valid[i_face - start_face_idx] = true;
+					noisy_normal[i_face - start_face_idx] = m_noised_tri_mesh.normal(*f_it);
+
+					int num_patch_faces = patch_data->m_aligned_patch_num_faces;
+					trans_mats[i_face - start_face_idx] = patch_data->m_matrix;
+					temp_input_tensor = torch::from_blob(patch_data->m_temp_network_input, { 1, num_patch_faces, 17 + 3 }, c10::ScalarType::Double);
+
+					temp_input_tensor = temp_input_tensor.toType(c10::ScalarType::Float);
+
+					if (num_patch_faces >= p_num_neighbors)
+					{
+						temp_input_tensor = temp_input_tensor.slice(1, 0, p_num_neighbors);
+					}
+					else
+					{
+						at::Tensor temp_tensor_cat = torch::zeros({ 1, p_num_neighbors - num_patch_faces, 20 });
+						temp_input_tensor = torch::cat({ temp_input_tensor, temp_tensor_cat }, 1);
+					}
+
+					temp_input_tensor = temp_input_tensor.permute({ 0, 2, 1 });
+				}
+
+				input_tensors[i_face - start_face_idx] = temp_input_tensor;
+				delete patch_data;
+			}
+
+			std::vector<at::Tensor> batch_tensors_vec;
+			for (int i_s = 0; i_s < num_last_batch; i_s++)
+			{
+				batch_tensors_vec.push_back(input_tensors[i_s]);
+			}
+			at::Tensor batch_tensors = torch::cat(batch_tensors_vec, 0);
+
+			std::vector<torch::jit::IValue> jit_inputs;
+			jit_inputs.push_back(batch_tensors.to(at::kCUDA));
+
+			at::Tensor output = GCN_2.forward(jit_inputs).toTensor();
+			output = output.cpu();
+			auto out_reader = output.accessor<float, 2>();
+
+#pragma omp parallel for
+			for (int i_s = 0; i_s < num_last_batch; i_s++)
+			{
+				if (is_valid[i_s] == true)
+				{
+					float x = out_reader[i_s][0];
+					float y = out_reader[i_s][1];
+					float z = out_reader[i_s][2];
+					glm::dvec3 temp_res((double)x, (double)y, (double)z);
+					temp_res = glm::normalize(temp_res);
+					temp_res = trans_mats[i_s] * temp_res;
+					TriMesh::Normal temp_normal(temp_res[0], temp_res[1], temp_res[2]);
+					predicted_normal_exten[num_batches * batch_size + i_s] = temp_normal;
+				}
+				else
+				{
+					predicted_normal_exten[num_batches * batch_size + i_s] = noisy_normal[i_s];
+				}
+			}
+
+			batch_tensors_vec.clear();
+			jit_inputs.clear();
+
+			input_tensors.clear();
+			trans_mats.clear();
+			is_valid.clear();
+			noisy_normal.clear();
+		}
+
+		std::cout << std::endl;
+		std::cout << "\tNetwork finish!" << std::endl;
+		std::cout << "\tPredicted Normal Generation Finish!" << std::endl;
+
+		mesh_denoising->denoiseWithPredictedNormal(predicted_normal_exten, normal_iterations);
+
+		std::cout << "\tSecond Denoising Finished! Start calculate Error..." << std::endl;
+		double error = mesh_denoising->getError();
+		std::cout << "Second Finish! Ea: " << error << std::endl;
+		// double ea = mesh_denoising->getErrorMSAE();
+		// std::cout << "Second Finish! MSE: " << error << " MSAE: " << ea << std::endl;
+		// double dv = mesh_denoising->getErrorDv();
+		// std::cout << "Second Finish! MSE: " << error << " MSAE: " << ea << " Dv: " << dv << std::endl;
+
+		res_name = "./Results/Denoised_";
+		tail = "_2.obj";
+		res_name = res_name + m_model_name + tail;
+		m_data_manager->ExportMeshToFile(res_name);
+		std::cout << "Result Save Success!" << std::endl;
+
+		predicted_normal_exten.clear();
+	}
 
 	/*----------------------------------------------------------*/
 	// get visualization
