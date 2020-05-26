@@ -638,23 +638,33 @@ void MeshViewer::slotDelete()
 	{
 		return;
 	}
+
+	if (m_is_have_noise)
+	{
+		m_noised_tri_mesh.clean();
+		m_vertices_kd_tree.clear();
+		m_all_face_neighbor.clear();
+		m_face_area.clear();
+		m_face_centroid.clear();
+
+		delete m_noised_mesh_visual_data;
+		delete m_denoised_mesh_visual_data;
+
+		m_is_have_noise = false;
+	}
+
+	if (m_is_have_gt)
+	{
+		m_gt_tri_mesh.clean();
+		delete m_gt_mesh_visual_data;
+
+		m_is_have_gt = false;
+	}
+
 	delete m_data_manager;
-	m_noised_tri_mesh.clean();
-	m_gt_tri_mesh.clean();
-	m_vertices_kd_tree.clear();
-	m_all_face_neighbor.clear();
-	m_face_area.clear();
-	m_face_centroid.clear();
-
-	delete m_gt_mesh_visual_data;
-	delete m_noised_mesh_visual_data;
-	delete m_denoised_mesh_visual_data;
-
-	m_is_have_gt = false;
-	m_is_have_noise = false;
-
-	m_num_faces = 0;
 	m_data_manager = new DataManager();
+	
+	m_num_faces = 0;
 	m_is_reload = true;
 	update();
 }
@@ -755,13 +765,19 @@ void MeshViewer::slotDenoise(int gcns, int normal_iterations)
 		std::cout << "No noisy model, load one first..." << std::endl;
 		return;
 	}
+	if (!m_is_have_gt)
+	{
+		std::cout << "No gt model, load one first for calculating error..." << std::endl;
+		return;
+	}
 
-	std::cout << "Start denoising..." << std::endl;
 	torch::jit::script::Module GCN_1;
+	torch::jit::script::Module GCN_2;
 
 	try
 	{
 		GCN_1 = torch::jit::load("./NetworkModel/script_model_1.pt");
+		GCN_2 = torch::jit::load("./NetworkModel/script_model_2.pt");
 	}
 	catch (const c10::Error& e)
 	{
@@ -770,6 +786,8 @@ void MeshViewer::slotDenoise(int gcns, int normal_iterations)
 	}
 	GCN_1.to(at::kCUDA);
 	GCN_1.eval();
+	GCN_2.to(at::kCUDA);
+	GCN_2.eval();
 	std::cout << "\tPre-trained Model Load Success!" << std::endl;
 
 	// pre-trained parameters
@@ -784,6 +802,7 @@ void MeshViewer::slotDenoise(int gcns, int normal_iterations)
 
 	std::vector<TriMesh::Normal> predicted_normal(m_num_faces);
 
+	std::cout << "Start denoising..." << std::endl;
 	TriMesh::FaceIter all_f_it = m_noised_tri_mesh.faces_begin();
 	TriMesh::FaceIter all_gt_f_it = m_gt_tri_mesh.faces_begin();
 	for (int i_batch = 0; i_batch < num_batches; i_batch++)
