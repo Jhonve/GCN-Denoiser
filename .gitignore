@@ -35,7 +35,6 @@ x64/
 TestData/
 DataSet/
 DataGen/
-NetworkModel/
 Results/
 runs/
 .vscode/

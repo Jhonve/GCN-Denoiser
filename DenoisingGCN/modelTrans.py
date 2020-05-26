@@ -3,7 +3,7 @@ from GCNModel import DGCNN
 
 k_current_model = "checkpoints/23_model.t7"
 
-dgcnn = DGCNN(6, 17, 1024, 0.5, 3)
+dgcnn = DGCNN(8, 17, 1024, 0.5, 3)
 
 dgcnn.load_state_dict(torch.load(k_current_model))
 dgcnn.eval()

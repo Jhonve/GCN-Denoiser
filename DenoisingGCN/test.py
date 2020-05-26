@@ -23,7 +23,7 @@ def test():
 
     print("Loading pre-trained model: ", k_opt.current_model)
 
-    dgcnn = DGCNN(6, 17, 1024, 0.5)
+    dgcnn = DGCNN(8, 17, 1024, 0.5)
     # dgcnn = torch.nn.DataParallel(dgcnn)
     dgcnn.load_state_dict(torch.load(k_opt.current_model))
     print("Load ", k_opt.current_model, " Success!")

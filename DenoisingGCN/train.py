@@ -29,11 +29,6 @@ if not os.path.exists(k_opt.ckpt_path):
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
-'''
-def multiRun():
-    torch.multiprocessing.freeze_support()
-'''
-
 def splitData(data_path, num_val_batch):
     num_data = data_path.shape[0]
     num_val_data = num_val_batch * k_opt.batch_size
@@ -81,7 +76,7 @@ def train():
 
     # initialize Network structure etc.
     current_epoch = 0
-    dgcnn = DGCNN(6, 17, 1024, 0.5)
+    dgcnn = DGCNN(8, 17, 1024, 0.5)
     # dgcnn = torch.nn.DataParallel(dgcnn)
     if k_opt.current_model != "":
         dgcnn.load_state_dict(torch.load(k_opt.current_model))
@@ -102,14 +97,10 @@ def train():
             inputs, gt_res, gt_norm, center_norm = data
             inputs = inputs.type(torch.FloatTensor)
             inputs = inputs.permute(0, 2, 1)
-            gt_res = gt_res.type(torch.FloatTensor)
             gt_norm = gt_norm.type(torch.FloatTensor)
-            center_norm = center_norm.type(torch.FloatTensor)
 
             inputs = inputs.cuda()
-            gt_res = gt_res.cuda()
             gt_norm = gt_norm.cuda()
-            center_norm = center_norm.cuda()
 
             optimizer.zero_grad()
             dgcnn = dgcnn.train()
@@ -140,14 +131,10 @@ def train():
             inputs, gt_res, gt_norm, center_norm = data
             inputs = inputs.type(torch.FloatTensor)
             inputs = inputs.permute(0, 2, 1)
-            gt_res = gt_res.type(torch.FloatTensor)
             gt_norm = gt_norm.type(torch.FloatTensor)
-            center_norm = center_norm.type(torch.FloatTensor)
 
             inputs = inputs.cuda()
-            gt_res = gt_res.cuda()
             gt_norm = gt_norm.cuda()
-            center_norm = center_norm.cuda()
 
             output = dgcnn(inputs)
 
