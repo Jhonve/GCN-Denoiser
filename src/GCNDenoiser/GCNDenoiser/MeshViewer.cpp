@@ -17,8 +17,6 @@
 
 #include <QFileDialog>
 
-#include <mat.h>
-
 GLuint VBOObj, VAOObj;
 
 bool MeshViewer::m_transparent = false;
@@ -39,9 +37,9 @@ MeshViewer::MeshViewer(QWidget* parent)
 	setFocusPolicy(Qt::StrongFocus);
 
 	m_data_manager = new DataManager();
-	m_current_file_name = "../../../models/trim-star_gaus_n3.obj";
+	m_current_file_name = "./example_noisy.obj";
 	meshInitializedGet(m_current_file_name.c_str(), false);
-	meshInitializedGet("../../../models/trim-star.obj", true);
+	meshInitializedGet("./example.obj", true);
 	int start = m_current_file_name.find_last_of('/');
 	int end = m_current_file_name.find_last_of('.');
 	m_model_name = m_current_file_name.substr(start + 1, end - start - 1);

@@ -40,7 +40,9 @@ runs/
 .vscode/
 __pycache__
 validationRes/
-Results
+Results/
+
+GCNDenoiser/*.obj
 
 # Configure files
 *.vcxproj
