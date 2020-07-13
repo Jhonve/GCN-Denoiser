@@ -14,7 +14,7 @@ Qt and Pytorch implementation for GCN-Denoiser
 ### Prerequisites:
 
 - Hardware: Personal computer with NVIDIA GPU.
-- Environments: CUDA10.0, Windows system (network training part can also be uesd on Linux).
+- Environments: CUDA10.0, Windows system (network training part can also be used on Linux).
 
 ### Third Party Library:
 
@@ -33,11 +33,13 @@ python datautils.py
 python test.py
 ```
 
-bunny_0_2/*.mat are sampled patches from the noisy *bunny* model with 0.2 level of Gaussion noise.
+`bunny_0_2/*.mat` are sampled patches from the noisy *bunny* model with 0.2 level of Gaussian noise.
 
 ### Denoising Interface:
 
 Executable demo, the corresponding code, and some sampled meshes are supplied. *New simplified version has been updated*
+
+- For .exe, windows platform is required and the CUDA PATH must be set in the system environment. Some important `.dll` have been supplied ( Unzip dlls.zip firstly).
 
 - For code, Visual Studio 2017 and Qt 5.12 are required.
 
