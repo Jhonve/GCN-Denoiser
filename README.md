@@ -1,5 +1,7 @@
 # GCN-Denoiser: Mesh Denoising with Graph Convolutional Networks
-Qt and Pytorch implementation for GCN-Denoiser
+Qt and Pytorch implementation for our paper "[GCN-Denoiser: Mesh Denoising with Graph Convolutional Networks](http://www.youyizheng.net/docs/gcn-denoiser.pdf)" (ACM Transactions on Graphics 2021)
+
+We propose GCN-Denoiser, a novel feature-preserving mesh denoising method based on graph convolutional networks (GCNs). Unlike previous learning-based mesh denoising methods that exploit hand-crafted or voxel-based representations for feature learning, our method explores the structure of a triangular mesh itself and introduces a graph representation followed by graph convolution operations in the dual space of triangles. We also create a new dataset called PrintData containing 20 real scans with their corresponding ground truths for the research community.
 
 ### Denoised Results:
 
@@ -39,7 +41,7 @@ python test.py
 
 Executable demo, the corresponding code, and some sampled meshes are supplied. *New simplified version has been updated*
 
-- For .exe, windows platform is required and the CUDA PATH must be set in the system environment. Some important `.dll` have been supplied ( Unzip dlls.zip firstly).
+- For .exe, windows platform is required and the CUDA PATH must be set in the system environment. Some important `.dll` have been supplied (CUDA&LibTorch: c10.dll, c10_cuda.dll, caffe2_nvrtc.dll, nvToolsExt61_1.dll, torch.dll; Qt: Qt5Core.dll, Qt5Gui.dll, Qt5OpenGL.dll, Qt5Widgets.dll).
 
 - For code, Visual Studio 2017 and Qt 5.12 are required.
 
@@ -47,8 +49,28 @@ Executable demo, the corresponding code, and some sampled meshes are supplied. *
 
 One version of GCN pre-trained model for synthetic models is supplied.
 
+### Dataset:
+
+Our new proposed dataset will be public soon. (If you want to get it immediatenly, please email me.)
+
+### Citation
+
+If you find this useful for your research, please cite the following paper.
+
+```
+@article{shen2021gcndenoiser,
+  title={GCN-Denoiser: Mesh Denoising with Graph Convolutional Networks},
+  author={Shen, yuefan and Fu, Hongbo and Du, Zhongshuo and Chen, Xiang and Burnaev, Evgeny and Zorin, Denis and Zhou, Kun and Zheng, Youyi},
+  journal={ACM Transactions on Graphics (TOG)},
+  volume={},
+  number={},
+  pages={},
+  year={2021},
+}
+```
+
+Waiting for updating...
+
 ### Acknowledgements
 
 Part of this implementations is based on [DGCNN](https://github.com/WangYueFt/dgcnn) and [GNF](https://github.com/bldeng/GuidedDenoising).
-
-### Keep Updating...
