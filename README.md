@@ -5,11 +5,11 @@ We propose GCN-Denoiser, a novel feature-preserving mesh denoising method based 
 
 ### Denoised Results:
 
-![](/imgs/result.png)
+<img src="/imgs/result.png" style="zoom:30%;" />
 
 ### Interface:
 
-<img src="/imgs/new_interface.png" alt="interface|60%" style="zoom:50%;" />
+<img src="/imgs/interface.png" style="zoom:60%;" />
 
 ## Code:
 
@@ -50,6 +50,8 @@ Executable demo, the corresponding code, and some sampled meshes are supplied. *
 One version of GCN pre-trained model for synthetic models is supplied.
 
 ### Dataset:
+
+<img src="/imgs/printeddataset.png" style="zoom:30%;" />
 
 Our new proposed dataset will be public soon. (If you want to get it immediatenly, please email me.)
 
