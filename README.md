@@ -53,7 +53,7 @@ One version of GCN pre-trained model for synthetic models is supplied.
 
 <img src="/imgs/printeddataset.png" style="zoom:30%;" />
 
-Our new proposed dataset will be public soon. (If you want to get it immediatenly, please email me.)
+See the zipped file "PrintedDataset.zip". 
 
 ### Citation
 
