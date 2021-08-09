@@ -39,9 +39,9 @@ python test.py
 
 ### Denoising Interface:
 
-Executable demo, the corresponding code, and some sampled meshes are supplied. *New simplified version has been updated*
+Executable demo, the corresponding code, and some sampled meshes are supplied.
 
-- For .exe, windows platform is required and the CUDA PATH must be set in the system environment. Some important `.dll` have been supplied (CUDA&LibTorch: c10.dll, c10_cuda.dll, caffe2_nvrtc.dll, nvToolsExt61_1.dll, torch.dll; Qt: Qt5Core.dll, Qt5Gui.dll, Qt5OpenGL.dll, Qt5Widgets.dll).
+- For .exe, windows platform is required and the CUDA PATH must be set in the system environment. Some `.dll` are required (CUDA&LibTorch: c10.dll, c10_cuda.dll, caffe2_nvrtc.dll, nvToolsExt61_1.dll, torch.dll; Qt: Qt5Core.dll, Qt5Gui.dll, Qt5OpenGL.dll, Qt5Widgets.dll).
 
 - For code, Visual Studio 2017 and Qt 5.12 are required.
 
@@ -49,7 +49,7 @@ Executable demo, the corresponding code, and some sampled meshes are supplied. *
 
 One version of GCN pre-trained model for synthetic models is supplied.
 
-### Dataset:
+## Dataset:
 
 <img src="/imgs/printeddataset.png" style="zoom:30%;" />
 
