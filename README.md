@@ -63,10 +63,11 @@ If you find this useful for your research, please cite the following paper.
 @article{shen2021gcndenoiser,
   title={GCN-Denoiser: Mesh Denoising with Graph Convolutional Networks},
   author={Shen, yuefan and Fu, Hongbo and Du, Zhongshuo and Chen, Xiang and Burnaev, Evgeny and Zorin, Denis and Zhou, Kun and Zheng, Youyi},
-  journal={ACM Transactions on Graphics (TOG)},
-  volume={},
-  number={},
-  pages={},
+  journal={ACM Trans. Graph.},
+  volume={41},
+  number={1},
+  issn={0730-0301},
+  numpages = {14},
   year={2021},
 }
 ```
