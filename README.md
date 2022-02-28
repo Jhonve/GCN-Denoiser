@@ -60,7 +60,7 @@ See the zipped file "PrintedDataset.zip".
 If you find this useful for your research, please cite the following paper.
 
 ```
-@article{shen2021gcndenoiser,
+@article{shen2022gcndenoiser,
   title={GCN-Denoiser: Mesh Denoising with Graph Convolutional Networks},
   author={Shen, yuefan and Fu, Hongbo and Du, Zhongshuo and Chen, Xiang and Burnaev, Evgeny and Zorin, Denis and Zhou, Kun and Zheng, Youyi},
   journal={ACM Trans. Graph.},
