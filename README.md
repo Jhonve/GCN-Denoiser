@@ -1,5 +1,5 @@
 # GCN-Denoiser: Mesh Denoising with Graph Convolutional Networks
-Qt and Pytorch implementation for our paper "[GCN-Denoiser: Mesh Denoising with Graph Convolutional Networks](http://www.youyizheng.net/docs/gcn-denoiser.pdf)" (ACM Transactions on Graphics 2021)
+Qt and Pytorch implementation for our paper "[GCN-Denoiser: Mesh Denoising with Graph Convolutional Networks](http://www.youyizheng.net/docs/gcn-denoiser.pdf)" (ACM Transactions on Graphics 2022)
 
 We propose GCN-Denoiser, a novel feature-preserving mesh denoising method based on graph convolutional networks (GCNs). Unlike previous learning-based mesh denoising methods that exploit hand-crafted or voxel-based representations for feature learning, our method explores the structure of a triangular mesh itself and introduces a graph representation followed by graph convolution operations in the dual space of triangles. We also create a new dataset called PrintData containing 20 real scans with their corresponding ground truths for the research community.
 
