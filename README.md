@@ -67,8 +67,8 @@ If you find this useful for your research, please cite the following paper.
   volume={41},
   number={1},
   issn={0730-0301},
-  numpages = {14},
-  year={2021},
+  numpages={14},
+  year={2022}
 }
 ```
 
