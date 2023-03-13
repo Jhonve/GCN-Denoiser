@@ -49,7 +49,7 @@ Executable demo, the corresponding code, and some sampled meshes are supplied.
 
 One version of GCN pre-trained model for synthetic models is supplied.
 
-### Pre-trained models:
+### Results:
 
 Our results of public noisy meshes proposed by [CNR](https://wang-ps.github.io/denoising.html) are released in our [Google Drive link](https://drive.google.com/drive/folders/15loCxIpkiH_xM45he2_DlNe3QQZY8wN0?usp=sharing) (including synthetic CAD, smooth and featured models and Kinect scanned models).
 
