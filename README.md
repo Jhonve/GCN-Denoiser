@@ -25,7 +25,7 @@ We propose GCN-Denoiser, a novel feature-preserving mesh denoising method based 
 
 ### Network part:
 
-The training code and part of validation data are supplied. Network test can be run by:
+The training code and part of validation data are supplied. Network tests can be run by:
 
 ```
 cd DenoisingGCN/testSamples
@@ -41,7 +41,7 @@ python test.py
 
 Executable demo, the corresponding code, and some sampled meshes are supplied.
 
-- For .exe, windows platform is required and the CUDA PATH must be set in the system environment. Some `.dll` are required (CUDA&LibTorch: c10.dll, c10_cuda.dll, caffe2_nvrtc.dll, nvToolsExt61_1.dll, torch.dll; Qt: Qt5Core.dll, Qt5Gui.dll, Qt5OpenGL.dll, Qt5Widgets.dll).
+- For .exe, windows platform is required and the CUDA PATH must be set in the system environment. Some `.dll` are required (CUDA&LibTorch: c10.dll, c10_cuda.dll, caffe2_nvrtc.dll, nvToolsExt61_1.dll, torch.dll; Qt: Qt5Core.dll, Qt5Gui.dll, Qt5OpenGL.dll, Qt5Widgets.dll). Required dlls can be downloaded from our [Google Drive link](https://drive.google.com/drive/folders/1jnTPCkqxmrVj3QuFd8t-aNEUa2A7rLVZ?usp=sharing).
 
 - For code, Visual Studio 2017 and Qt 5.12 are required.
 
@@ -49,11 +49,15 @@ Executable demo, the corresponding code, and some sampled meshes are supplied.
 
 One version of GCN pre-trained model for synthetic models is supplied.
 
+### Pre-trained models:
+
+Our results of public noisy meshes proposed by [CNR](https://wang-ps.github.io/denoising.html) are released in our [Google Drive link](https://drive.google.com/drive/folders/15loCxIpkiH_xM45he2_DlNe3QQZY8wN0?usp=sharing) (including synthetic CAD, smooth and featured models and Kinect scanned models).
+
 ## Dataset:
 
 <img src="/imgs/printeddataset.png" style="zoom:30%;" />
 
-See the zipped file "PrintedDataset.zip". 
+Download the dataset from our [Google Drive link](https://drive.google.com/file/d/1x561-v3z1j0q_1qHYG0Fja1W-sqjhYpC/view?usp=sharing).
 
 ### Citation
 
@@ -76,4 +80,4 @@ Waiting for updating...
 
 ### Acknowledgements
 
-Part of this implementations is based on [DGCNN](https://github.com/WangYueFt/dgcnn) and [GNF](https://github.com/bldeng/GuidedDenoising).
+Part of this implementation is based on [DGCNN](https://github.com/WangYueFt/dgcnn) and [GNF](https://github.com/bldeng/GuidedDenoising).
