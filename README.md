@@ -57,7 +57,7 @@ Our results of public noisy meshes proposed by [CNR](https://wang-ps.github.io/d
 
 <img src="/imgs/printeddataset.png" style="zoom:30%;" />
 
-Download the dataset from our [Google Drive link](https://drive.google.com/file/d/1x561-v3z1j0q_1qHYG0Fja1W-sqjhYpC/view?usp=sharing).
+Download the dataset from our [Google Drive link](https://drive.google.com/file/d/1x561-v3z1j0q_1qHYG0Fja1W-sqjhYpC/view?usp=sharing). Our denoised results and evaluation code can also be found in this [Google Drive link](https://drive.google.com/file/d/1Z35-OUftHZYZFM_fQC5uAUBQSQ2vl_6H/view?usp=sharing).
 
 ### Citation
 
