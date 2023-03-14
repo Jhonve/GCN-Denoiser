@@ -81,3 +81,5 @@ Waiting for updating...
 ### Acknowledgements
 
 Part of this implementation is based on [DGCNN](https://github.com/WangYueFt/dgcnn) and [GNF](https://github.com/bldeng/GuidedDenoising).
+
+Our paper was originally submitted in May 2020, and after a long journey, it was finally accepted in August 2021 and published in 2022. We would like to express our gratitude to all the anonymous reviewers for their constructive comments.
